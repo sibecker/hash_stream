@@ -192,6 +192,9 @@ struct is_contiguously_hashable<T[N], HashAlgorithm>
                                        HashAlgorithm::endian == endian::native)>
 {};
 
+template<class T, class Hasher>
+inline constexpr auto is_contiguously_hashable_v = is_contiguously_hashable<T, Hasher>::value;
+
 // template <class Hasher, class T>
 // void
 // hash_append(Hasher& h, T const& t);
@@ -203,9 +206,8 @@ struct is_contiguously_hashable<T[N], HashAlgorithm>
 
 template <class Hasher, class T>
 inline
-std::enable_if_t
-<
-    is_contiguously_hashable<T, Hasher>{}
+std::enable_if_t<
+    is_contiguously_hashable_v<T, Hasher>
 >
 hash_append(Hasher& h, T const& t) noexcept
 {
@@ -216,7 +218,7 @@ template <class Hasher, class T>
 inline
 std::enable_if_t
 <
-    !is_contiguously_hashable<T, Hasher>{} &&
+    !is_contiguously_hashable_v<T, Hasher> &&
     (std::is_integral<T>{} || std::is_pointer<T>{} || std::is_enum<T>{})
 >
 hash_append(Hasher& h, T t) noexcept
@@ -229,7 +231,7 @@ template <class Hasher, class T>
 inline
 std::enable_if_t
 <
-    std::is_floating_point<T>{}
+    std::is_floating_point_v<T>
 >
 hash_append(Hasher& h, T t) noexcept
 {
@@ -254,56 +256,56 @@ hash_append(Hasher& h, std::nullptr_t) noexcept
 template <class Hasher, class T, std::size_t N>
 std::enable_if_t
 <
-    !is_contiguously_hashable<T, Hasher>{}
+    !is_contiguously_hashable_v<T, Hasher>
 >
 hash_append(Hasher& h, T (&a)[N]) noexcept;
 
 template <class Hasher, class CharT, class Traits, class Alloc>
 std::enable_if_t
 <
-    !is_contiguously_hashable<CharT, Hasher>{} 
+    !is_contiguously_hashable_v<CharT, Hasher>
 >
 hash_append(Hasher& h, std::basic_string<CharT, Traits, Alloc> const& s) noexcept;
 
 template <class Hasher, class CharT, class Traits, class Alloc>
 std::enable_if_t
 <
-    is_contiguously_hashable<CharT, Hasher>{} 
+    is_contiguously_hashable_v<CharT, Hasher>
 >
 hash_append(Hasher& h, std::basic_string<CharT, Traits, Alloc> const& s) noexcept;
 
 template <class Hasher, class T, class U>
 std::enable_if_t
 <
-    !is_contiguously_hashable<std::pair<T, U>, Hasher>{} 
+    !is_contiguously_hashable_v<std::pair<T, U>, Hasher>
 >
 hash_append (Hasher& h, std::pair<T, U> const& p) noexcept;
 
 template <class Hasher, class T, class Alloc>
 std::enable_if_t
 <
-    !is_contiguously_hashable<T, Hasher>{}
+    !is_contiguously_hashable_v<T, Hasher>
 >
 hash_append(Hasher& h, std::vector<T, Alloc> const& v) noexcept;
 
 template <class Hasher, class T, class Alloc>
 std::enable_if_t
 <
-    is_contiguously_hashable<T, Hasher>{}
+    is_contiguously_hashable_v<T, Hasher>
 >
 hash_append(Hasher& h, std::vector<T, Alloc> const& v) noexcept;
 
 template <class Hasher, class T, std::size_t N>
 std::enable_if_t
 <
-    !is_contiguously_hashable<std::array<T, N>, Hasher>{}
+    !is_contiguously_hashable_v<std::array<T, N>, Hasher>
 >
 hash_append(Hasher& h, std::array<T, N> const& a) noexcept;
 
 template <class Hasher, class ...T>
 std::enable_if_t
 <
-    !is_contiguously_hashable<std::tuple<T...>, Hasher>{}
+    !is_contiguously_hashable_v<std::tuple<T...>, Hasher>
 >
 hash_append(Hasher& h, std::tuple<T...> const& t) noexcept;
 
@@ -324,7 +326,7 @@ hash_append (Hasher& h, T0 const& t0, T1 const& t1, T const& ...t) noexcept;
 template <class Hasher, class T, std::size_t N>
 std::enable_if_t
 <
-    !is_contiguously_hashable<T, Hasher>{}
+    !is_contiguously_hashable_v<T, Hasher>
 >
 hash_append(Hasher& h, T (&a)[N]) noexcept
 {
@@ -338,7 +340,7 @@ template <class Hasher, class CharT, class Traits, class Alloc>
 inline
 std::enable_if_t
 <
-    !is_contiguously_hashable<CharT, Hasher>{} 
+    !is_contiguously_hashable_v<CharT, Hasher>
 >
 hash_append(Hasher& h, std::basic_string<CharT, Traits, Alloc> const& s) noexcept
 {
@@ -351,7 +353,7 @@ template <class Hasher, class CharT, class Traits, class Alloc>
 inline
 std::enable_if_t
 <
-    is_contiguously_hashable<CharT, Hasher>{} 
+    is_contiguously_hashable_v<CharT, Hasher>
 >
 hash_append(Hasher& h, std::basic_string<CharT, Traits, Alloc> const& s) noexcept
 {
@@ -365,7 +367,7 @@ template <class Hasher, class T, class U>
 inline
 std::enable_if_t
 <
-    !is_contiguously_hashable<std::pair<T, U>, Hasher>{}
+    !is_contiguously_hashable_v<std::pair<T, U>, Hasher>
 >
 hash_append (Hasher& h, std::pair<T, U> const& p) noexcept
 {
@@ -378,7 +380,7 @@ template <class Hasher, class T, class Alloc>
 inline
 std::enable_if_t
 <
-    !is_contiguously_hashable<T, Hasher>{}
+    !is_contiguously_hashable_v<T, Hasher>
 >
 hash_append(Hasher& h, std::vector<T, Alloc> const& v) noexcept
 {
@@ -391,7 +393,7 @@ template <class Hasher, class T, class Alloc>
 inline
 std::enable_if_t
 <
-    is_contiguously_hashable<T, Hasher>{}
+    is_contiguously_hashable_v<T, Hasher>
 >
 hash_append(Hasher& h, std::vector<T, Alloc> const& v) noexcept
 {
@@ -404,7 +406,7 @@ hash_append(Hasher& h, std::vector<T, Alloc> const& v) noexcept
 template <class Hasher, class T, std::size_t N>
 std::enable_if_t
 <
-    !is_contiguously_hashable<std::array<T, N>, Hasher>{}
+    !is_contiguously_hashable_v<std::array<T, N>, Hasher>
 >
 hash_append(Hasher& h, std::array<T, N> const& a) noexcept
 {
@@ -446,7 +448,7 @@ template <class Hasher, class ...T>
 inline
 std::enable_if_t
 <
-    !is_contiguously_hashable<std::tuple<T...>, Hasher>{}
+    !is_contiguously_hashable_v<std::tuple<T...>, Hasher>
 >
 hash_append(Hasher& h, std::tuple<T...> const& t) noexcept
 {
