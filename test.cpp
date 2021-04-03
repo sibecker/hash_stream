@@ -51,6 +51,7 @@ main()
         std::cout << test5(hashes) << '\n';
     }
     std::cout << '\n';
+#ifdef __clang__
     hashes.clear();
     {
         auto t0 = std::chrono::high_resolution_clock::now();
@@ -66,6 +67,7 @@ main()
         std::cout << test5(hashes) << '\n';
     }
     std::cout << '\n';
+#endif
     hashes.clear();
     {
         auto t0 = std::chrono::high_resolution_clock::now();

@@ -42,34 +42,6 @@ namespace detail
 
 //  Standards-worthy utilities, but not for this proposal...
 
-template <bool ...> struct static_and;
-
-template <bool B0, bool ... Bp>
-struct static_and<B0, Bp...>
-    : public std::integral_constant<bool, B0 && static_and<Bp...>{}>
-{
-};
-
-template <>
-struct static_and<>
-    : public std::true_type
-{
-};
-
-template <std::size_t ...> struct static_sum;
-
-template <std::size_t S0, std::size_t ...SN>
-struct static_sum<S0, SN...>
-    : public std::integral_constant<std::size_t, S0 + static_sum<SN...>{}>
-{
-};
-
-template <>
-struct static_sum<>
-    : public std::integral_constant<std::size_t, 0>
-{
-};
-
 template <class T>
 constexpr
 inline
@@ -156,8 +128,8 @@ struct is_uniquely_represented<std::pair<T, U>>
 template <class ...T>
 struct is_uniquely_represented<std::tuple<T...>>
     : public std::integral_constant<bool,
-            detail::static_and<is_uniquely_represented<T>{}...>{} && 
-            detail::static_sum<sizeof(T)...>{} == sizeof(std::tuple<T...>)>
+            (is_uniquely_represented<T>{} && ...) &&
+            (sizeof(T) + ...) == sizeof(std::tuple<T...>)>
 {
 };
 
@@ -178,18 +150,55 @@ struct is_uniquely_represented<std::array<T, N>>
 {
 };
 
+
+// SFINAE test
+template <typename T>
+struct has_endian;
+
+template <typename T>
+class has_endian_test
+{
+    typedef char one;
+    struct two { char x[2]; };
+
+    template <typename C> static constexpr one test( decltype(C::endian) ) ;
+    template <typename C> static constexpr two test(...);
+
+    friend struct has_endian<T>;
+public:
+    static inline constexpr bool value = sizeof(test<T>(endian::native)) == sizeof(char);
+};
+
+template <typename T>
+struct has_endian
+        : public std::bool_constant<has_endian_test<T>::value>
+{};
+
+template <typename HashAlgorithm, bool v = has_endian<HashAlgorithm>{}>
+struct get_endian;
+
+template <typename HashAlgorithm>
+struct get_endian<HashAlgorithm, true>
+    : public std::integral_constant<endian, HashAlgorithm::endian>
+{};
+
+template <typename HashAlgorithm>
+struct get_endian<HashAlgorithm, false>
+    : public std::integral_constant<endian, endian::native>
+{};
+
 template <class T, class HashAlgorithm>
 struct is_contiguously_hashable
     : public std::integral_constant<bool, is_uniquely_represented<T>{} &&
                                       (sizeof(T) == 1 ||
-                                       HashAlgorithm::endian == endian::native)>
+                                       get_endian<HashAlgorithm>::value == endian::native)>
 {};
 
 template <class T, std::size_t N, class HashAlgorithm>
 struct is_contiguously_hashable<T[N], HashAlgorithm>
     : public std::integral_constant<bool, is_uniquely_represented<T[N]>{} &&
                                       (sizeof(T) == 1 ||
-                                       HashAlgorithm::endian == endian::native)>
+                                       get_endian<HashAlgorithm>::value == endian::native)>
 {};
 
 template<class T, class Hasher>

@@ -76,8 +76,8 @@ std::mt19937_64 eng;
 X::X()
 {
     std::uniform_int_distribution<short> yeardata(1914, 2014);
-    std::uniform_int_distribution<unsigned char> monthdata(1, 12);
-    std::uniform_int_distribution<unsigned char> daydata(1, 28);
+    std::uniform_int_distribution<unsigned short> monthdata(1, 12);
+    std::uniform_int_distribution<unsigned short> daydata(1, 28);
     std::uniform_int_distribution<std::size_t> veclen(0, 100);
     std::uniform_int_distribution<int> int1data(1, 10);
     std::uniform_int_distribution<int> int2data(-3, 3);

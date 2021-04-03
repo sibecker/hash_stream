@@ -30,7 +30,9 @@
 #include <chrono>
 #include <numeric>
 
+#ifdef __clang__
 #include "../llvm/include/llvm/ADT/Hashing.h"
+#endif
 
 int
 main()

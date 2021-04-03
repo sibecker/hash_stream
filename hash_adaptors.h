@@ -13,6 +13,7 @@
 #define HASH_ADAPTORS_H
 
 #include <cstddef>
+#include <functional>
 
 // namespace acme is used to demonstrate example code.  It is not proposed.
 
