@@ -31,7 +31,9 @@
 #include <random>
 
 #include "n3876.h"
+#ifdef __clang__
 #include "../llvm/include/llvm/ADT/Hashing.h"
+#endif
 
 int
 main()
