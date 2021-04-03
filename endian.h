@@ -21,15 +21,9 @@ namespace xstd
 //     native endian?
 enum class endian
 {
-#if _MSC_VER
-    little = 1234,
-    big    = 4321,
-    native = little,
-#else
+    native = __BYTE_ORDER__,
     little = __ORDER_LITTLE_ENDIAN__,
-    big    = __ORDER_BIG_ENDIAN__,
-    native = __BYTE_ORDER__
-#endif
+    big    = __ORDER_BIG_ENDIAN__
 };
 
 static_assert(endian::native == endian::little ||
