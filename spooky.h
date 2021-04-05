@@ -40,8 +40,20 @@ public:
         state_.Update(key, len);
     }
 
+    void
+    operator<<(std::span<std::byte const> const& bytes) noexcept
+    {
+        return (*this)(bytes.data(), bytes.size());
+    }
+
     explicit
     operator result_type() noexcept
+    {
+        return (*this)();
+    }
+
+    result_type
+    operator()() noexcept
     {
         std::uint64_t h1, h2;
         state_.Final(&h1, &h2);

@@ -16,6 +16,7 @@
 #include "xxhash.h"
 #include <climits>
 #include <cstddef>
+#include <span>
 #include <type_traits>
 
 // namespace acme is used to demonstrate example code.  It is not proposed.
@@ -99,10 +100,22 @@ public:
         this->update(key, len);
     }
 
+    void
+    operator<<(std::span<std::byte const> const& bytes) noexcept
+    {
+        return (*this)(bytes.data(), bytes.size());
+    }
+
+    result_type
+    operator()() noexcept
+    {
+        return static_cast<std::size_t>(this->digest());
+    }
+
     explicit
     operator result_type() noexcept
     {
-        return static_cast<std::size_t>(this->digest());
+        return (*this)();
     }
 };
 

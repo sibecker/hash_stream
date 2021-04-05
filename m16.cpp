@@ -11,6 +11,7 @@
 
 // The proposal
 #include "hash_append.h"
+#include "hash_stream.h"
 
 // Example Hashers
 #include "siphash.h"

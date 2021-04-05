@@ -21,7 +21,7 @@ namespace acme
 
 class Handle
 {
-    struct CheshireCat;               // Not defined here
+    class CheshireCat;               // Not defined here
     CheshireCat* smile;               // Handle
 
 public:
@@ -34,10 +34,11 @@ public:
 
     // Hash support
     using type_erased_hasher = acme::type_erased_hasher<std::size_t>;
+    using type_erased_stream = xstd::type_erased_stream;
 
     friend
     void
-    hash_append(type_erased_hasher&, CheshireCat const&);
+    hash_append(type_erased_hasher&, Handle const&);
 
     template <class Hasher>
     friend
@@ -50,8 +51,24 @@ public:
         else
         {
             type_erased_hasher temp(std::move(h));
-            hash_append(temp, *x.smile);
+            hash_append(temp, x);
             h = std::move(*temp.target<Hasher>());
+        }
+    }
+
+    friend
+    type_erased_stream&
+    operator<<(type_erased_stream&&, Handle const&) noexcept;
+
+    template<typename Hasher>
+    friend
+    xstd::stream<Hasher>&
+    operator<<(xstd::stream<Hasher>& h, Handle const& x) noexcept
+    {
+        if (x.smile == nullptr)
+            return h << nullptr;
+        else {
+            return type_erased_stream{h} << x;
         }
     }
 };

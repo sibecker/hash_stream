@@ -14,6 +14,7 @@
 
 #include "endian.h"
 #include <cstddef>
+#include <span>
 
 // namespace acme is used to demonstrate example code.  It is not proposed.
 
@@ -37,10 +38,22 @@ public:
             state_ = (state_ ^ *p) * 1099511628211u;
     }
 
+    void
+    operator<<(std::span<std::byte const> const& bytes) noexcept
+    {
+        (*this)(bytes.data(), bytes.size());
+    }
+
+    std::size_t
+    operator()() noexcept
+    {
+        return state_;
+    }
+
     explicit
     operator std::size_t() noexcept
     {
-        return state_;
+        return (*this)();
     }
 };
 

@@ -1,4 +1,5 @@
 #include "hash_append.h"
+#include "hash_append.h"
 #include <cstddef>
 
 class MyHashAlgorithm
@@ -23,8 +24,21 @@ public:
             return hash_1to3_bytes(s, length);
     }
 
+    template<typename Hasher>
+    void
+    operator<<(std::span<std::byte const> const& bytes)
+    {
+        (*this)(bytes.data(), bytes.size());
+    }
+
+    std::size_t
+    operator()() noexcept;
+
     explicit
-    operator std::size_t() noexcept;
+    operator std::size_t() noexcept
+    {
+        return (*this)();
+    }
 
 private:
     void hash_1to3_bytes(void const* s, std::size_t length) noexcept;
@@ -37,5 +51,5 @@ private:
 std::size_t
 test(int i)
 {
-    return xstd::uhash<MyHashAlgorithm>{}(i);
+    return xstd::shash<MyHashAlgorithm>{}(i);
 }

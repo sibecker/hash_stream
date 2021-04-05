@@ -41,13 +41,25 @@ public:
         }
     }
 
-    explicit
-    operator std::size_t() noexcept
+    void
+    operator<<(std::span<std::byte const> const& bytes) noexcept
+    {
+        return (*this)(bytes.data(), bytes.size());
+    }
+
+    std::size_t
+    operator()() noexcept
     {
         state_ += state_ << 3;
         state_ ^= state_ >> 11;
         state_ += state_ << 15;
         return state_;
+    }
+
+    explicit
+    operator std::size_t() noexcept
+    {
+        return (*this)();
     }
 };
 

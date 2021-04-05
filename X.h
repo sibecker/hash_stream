@@ -18,9 +18,12 @@
 #include <random>
 
 #include "hash_append.h"
+#include "hash_stream.h"
 #include "n3876.h"
 
-// #include "../llvm/include/llvm/ADT/Hashing.h"
+#ifdef __clang__
+#include "../llvm/include/llvm/ADT/Hashing.h"
+#endif
 
 namespace mine
 {
@@ -67,7 +70,15 @@ public:
     hash_append(Hasher& h, X const& x)
     {
         using xstd::hash_append;
-        hash_append(h, x.date_);
+        hash_append(h, x.date_, x.data_);
+    }
+
+    template <class Hasher>
+    friend
+    xstd::stream<Hasher>&
+    operator<<(xstd::stream<Hasher>& h, X const& x)
+    {
+        return h << x.date_ << x.data_;
     }
 };
 
@@ -78,7 +89,7 @@ X::X()
     std::uniform_int_distribution<short> yeardata(1914, 2014);
     std::uniform_int_distribution<unsigned short> monthdata(1, 12);
     std::uniform_int_distribution<unsigned short> daydata(1, 28);
-    std::uniform_int_distribution<std::size_t> veclen(0, 100);
+    std::uniform_int_distribution<std::size_t> veclen(1, 100);
     std::uniform_int_distribution<int> int1data(1, 10);
     std::uniform_int_distribution<int> int2data(-3, 3);
     std::get<0>(date_) = yeardata(eng);

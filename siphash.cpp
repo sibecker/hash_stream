@@ -126,7 +126,14 @@ siphash::operator()(void const* key, std::size_t inlen) noexcept
     std::copy(end, end + bufsize_, buf_);
 }
 
-siphash::operator std::size_t() noexcept
+void
+siphash::operator<<(std::span<std::byte const> const& bytes) noexcept
+{
+    return (*this)(bytes.data(), bytes.size());
+}
+
+std::size_t
+siphash::operator()() noexcept
 {
     std::size_t b = static_cast<u64>(total_length_) << 56;
     switch(bufsize_)
@@ -159,6 +166,11 @@ siphash::operator std::size_t() noexcept
     sipround(v0_, v1_, v2_, v3_);
     b = v0_ ^ v1_ ^ v2_  ^ v3_;
     return b;
+}
+
+siphash::operator std::size_t() noexcept
+{
+    return (*this)();
 }
 
 }  // acme

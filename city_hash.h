@@ -13,6 +13,7 @@
 #define CITY_HASH_H
 
 #include <cstddef>
+#include <span>
 #include <vector>
 #include "city.h"
 
@@ -36,8 +37,18 @@ public:
             buf_.push_back(*p);
     }
 
+    void operator<<(std::span<std::byte const> const& bytes)
+    {
+        (*this)(bytes.data(), bytes.size());
+    }
+
     explicit
     operator std::size_t() noexcept
+    {
+        return (*this)();
+    }
+
+    std::size_t operator()() noexcept
     {
         return CityHash64(buf_.data(), buf_.size());
     }

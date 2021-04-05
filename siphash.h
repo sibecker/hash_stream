@@ -30,6 +30,7 @@
 #include "endian.h"
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 // namespace acme is used to demonstrate example code.  It is not proposed.
 
@@ -54,6 +55,12 @@ public:
 
     void
     operator()(void const* key, std::size_t len) noexcept;
+
+    void
+    operator<<(std::span<std::byte const> const& bytes) noexcept;
+
+    std::size_t
+    operator()() noexcept;
 
     explicit
     operator std::size_t() noexcept;

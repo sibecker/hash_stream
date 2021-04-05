@@ -11,6 +11,7 @@
 
 // The proposal
 #include "hash_append.h"
+#include "hash_stream.h"
 
 // Example Hashers
 #include "siphash.h"
@@ -55,8 +56,10 @@ main()
         avg += str.size();
     avg /= s.size();
     std::cout << "avg = " << avg << '\n';
-#if 1
+#if 0
     xstd::uhash<acme::city> h;
+#else
+    xstd::shash<acme::city> h;
 #endif
     std::vector<std::size_t> hashes;
     hashes.reserve(s.size());

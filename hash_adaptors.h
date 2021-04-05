@@ -14,6 +14,8 @@
 
 #include <cstddef>
 #include <functional>
+#include "hash_append.h"
+#include "hash_stream.h"
 
 // namespace acme is used to demonstrate example code.  It is not proposed.
 
@@ -43,12 +45,26 @@ public:
         hasher_(key, len);
     }
 
+    void
+    operator<<(std::span<std::byte const> const& bytes) noexcept
+    {
+        length_ += bytes.size();
+        hasher_(bytes);
+    }
+
     explicit
     operator result_type() noexcept
     {
         using xstd::hash_append;
         hash_append(hasher_, length_);
         return static_cast<result_type>(hasher_);
+    }
+
+    result_type
+    operator()() noexcept
+    {
+        hasher_ << length_;
+        return hasher_();
     }
 };
 
@@ -110,5 +126,51 @@ private:
 };
 
 }  // acme
+
+namespace xstd
+{
+    namespace detail
+    {
+        struct type_erased_tag;
+    }
+
+    // Specialised version of stream, to become a type erased hash stream
+    // We only need to provide the operator<< as operator() will never
+    // be called directly.
+
+    template<>
+    class stream<detail::type_erased_tag>
+    {
+    private:
+        void* stream_;
+        std::function<void(std::span<std::byte const> const&)> function_;
+
+    public:
+        template<class Hasher>
+        stream(stream<Hasher>& h)
+            : stream_{&h},
+              function_{[&h](std::span<std::byte const> const& bytes)
+                {
+                    h << bytes;
+                }
+            }
+        {}
+
+        stream&
+        operator<<(std::span<std::byte const> const& bytes) noexcept
+        {
+            function_(bytes);
+            return *this;
+        }
+
+        template<typename Hasher>
+        operator stream<Hasher>& () noexcept
+        {
+            return *static_cast<stream<Hasher>*>(stream_);
+        }
+    };
+    using type_erased_stream = typename stream<detail::type_erased_tag>;
+
+} // xstd
 
 #endif  // HASH_ADAPTORS_H

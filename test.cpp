@@ -11,6 +11,7 @@
 
 // The proposal
 #include "hash_append.h"
+#include "hash_stream.h"
 
 // Example Hashers
 #include "spooky.h"
@@ -23,6 +24,8 @@
 #include "hash_adaptors.h"
 #include "X.h"
 #include "hash_test.h"
+#include "city_hash.h"
+#include "xx_hash.h"
 
 #include <iostream>
 #include <chrono>
@@ -35,116 +38,53 @@ main()
     std::set<mine::X> x;
     while (x.size() < 1000000)
         x.insert(mine::X{});
-    std::vector<std::size_t> hashes;
-    hashes.reserve(x.size());
+
+    auto test = [&x](auto const& h, const char* name)
     {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        for (auto const& i : x)
-            hashes.push_back(std::hash<mine::X>{}(i));
-        auto t1 = std::chrono::high_resolution_clock::now();
-        std::cout << "std::hash<X> " << '\n' << std::hex;
-        std::cout << secs(t1-t0).count() << " s\n";
-        std::cout << test1(hashes) << '\n';
-        std::cout << test2(hashes) << '\n';
-        std::cout << test3(hashes) << '\n';
-        std::cout << test4(hashes) << '\n';
-        std::cout << test5(hashes) << '\n';
-    }
-    std::cout << '\n';
+        std::vector<std::size_t> hashes;
+        hashes.reserve(x.size());
+        {
+            auto t0 = std::chrono::high_resolution_clock::now();
+            for (auto const &i : x)
+                hashes.push_back(h(i));
+            auto t1 = std::chrono::high_resolution_clock::now();
+            std::cout << name << " " << '\n' << std::hex;
+            std::cout << secs(t1 - t0).count() << " s\n";
+            std::cout << test1(hashes) << '\n';
+            std::cout << test2(hashes) << '\n';
+            std::cout << test3(hashes) << '\n';
+            std::cout << test4(hashes) << '\n';
+            std::cout << test5(hashes) << '\n';
+        }
+        std::cout << std::endl;
+        return hashes;
+    };
+#define TEST(NAME) test(NAME{}, #NAME)
+
+    TEST(std::hash<mine::X>);
 #ifdef __clang__
-    hashes.clear();
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        for (auto const& i : x)
-            hashes.push_back(hash_value(i));
-        auto t1 = std::chrono::high_resolution_clock::now();
-        std::cout << "llvm::hash_value " << '\n' << std::hex;
-        std::cout << secs(t1-t0).count() << " s\n";
-        std::cout << test1(hashes) << '\n';
-        std::cout << test2(hashes) << '\n';
-        std::cout << test3(hashes) << '\n';
-        std::cout << test4(hashes) << '\n';
-        std::cout << test5(hashes) << '\n';
-    }
-    std::cout << '\n';
+    test(&hash_value, "llvm::hash_value");
 #endif
-    hashes.clear();
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        xstd::uhash<acme::fnv1a> h;
-        for (auto const& i : x)
-            hashes.push_back(h(i));
-        auto t1 = std::chrono::high_resolution_clock::now();
-        std::cout << "fnv1a " << '\n' << std::hex;
-        std::cout << secs(t1-t0).count() << " s\n";
-        std::cout << test1(hashes) << '\n';
-        std::cout << test2(hashes) << '\n';
-        std::cout << test3(hashes) << '\n';
-        std::cout << test4(hashes) << '\n';
-        std::cout << test5(hashes) << '\n';
-    }
-    std::cout << '\n';
-    hashes.clear();
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        xstd::uhash<acme::jenkins1> h;
-        for (auto const& i : x)
-            hashes.push_back(h(i));
-        auto t1 = std::chrono::high_resolution_clock::now();
-        std::cout << "jenkins1 " << '\n' << std::hex;
-        std::cout << secs(t1-t0).count() << " s\n";
-        std::cout << test1(hashes) << '\n';
-        std::cout << test2(hashes) << '\n';
-        std::cout << test3(hashes) << '\n';
-        std::cout << test4(hashes) << '\n';
-        std::cout << test5(hashes) << '\n';
-    }
-    std::cout << '\n';
-    hashes.clear();
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        xstd::uhash<acme::MurmurHash2A> h;
-        for (auto const& i : x)
-            hashes.push_back(h(i));
-        auto t1 = std::chrono::high_resolution_clock::now();
-        std::cout << "MurmurHash2A " << '\n' << std::hex;
-        std::cout << secs(t1-t0).count() << " s\n";
-        std::cout << test1(hashes) << '\n';
-        std::cout << test2(hashes) << '\n';
-        std::cout << test3(hashes) << '\n';
-        std::cout << test4(hashes) << '\n';
-        std::cout << test5(hashes) << '\n';
-    }
-    std::cout << '\n';
-    hashes.clear();
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        xstd::uhash<acme::spooky> h;
-        for (auto const& i : x)
-            hashes.push_back(h(i));
-        auto t1 = std::chrono::high_resolution_clock::now();
-        std::cout << "spooky " << '\n' << std::hex;
-        std::cout << secs(t1-t0).count() << " s\n";
-        std::cout << test1(hashes) << '\n';
-        std::cout << test2(hashes) << '\n';
-        std::cout << test3(hashes) << '\n';
-        std::cout << test4(hashes) << '\n';
-        std::cout << test5(hashes) << '\n';
-    }
-    std::cout << '\n';
-    hashes.clear();
-    {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        xstd::uhash<acme::siphash> h;
-        for (auto const& i : x)
-            hashes.push_back(h(i));
-        auto t1 = std::chrono::high_resolution_clock::now();
-        std::cout << "siphash " << '\n' << std::hex;
-        std::cout << secs(t1-t0).count() << " s\n";
-        std::cout << test1(hashes) << '\n';
-        std::cout << test2(hashes) << '\n';
-        std::cout << test3(hashes) << '\n';
-        std::cout << test4(hashes) << '\n';
-        std::cout << test5(hashes) << '\n';
-    }
+
+    TEST(xstd::uhash<acme::city>);
+    TEST(xstd::shash<acme::city>);
+
+    TEST(xstd::uhash<acme::fnv1a>);
+    TEST(xstd::shash<acme::fnv1a>);
+
+    TEST(xstd::uhash<acme::jenkins1>);
+    TEST(xstd::shash<acme::jenkins1>);
+
+    TEST(xstd::uhash<acme::MurmurHash2A>);
+    TEST(xstd::shash<acme::MurmurHash2A>);
+
+    TEST(xstd::uhash<acme::spooky>);
+    TEST(xstd::shash<acme::spooky>);
+
+    TEST(xstd::uhash<acme::siphash>);
+    TEST(xstd::shash<acme::siphash>);
+
+    TEST(xstd::uhash<acme::xx_hash>);
+    TEST(xstd::shash<acme::xx_hash>);
+#undef TEST
 }

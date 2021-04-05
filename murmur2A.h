@@ -58,8 +58,14 @@ public:
         MixTail(data,len);
     }
 
-    explicit
-    operator result_type () noexcept
+    void
+    operator<< ( std::span<std::byte const> const& bytes ) noexcept
+    {
+        return (*this)(bytes.data(), bytes.size());
+    }
+
+    result_type
+    operator() () noexcept
     {
         mmix(m_hash,m_tail);
         mmix(m_hash,m_size);
@@ -69,6 +75,12 @@ public:
         m_hash ^= m_hash >> 15;
 
         return m_hash;
+    }
+
+    explicit
+    operator result_type () noexcept
+    {
+        return (*this)();
     }
 
 private:

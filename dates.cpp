@@ -11,6 +11,7 @@
 
 // The proposal
 #include "hash_append.h"
+#include "hash_stream.h"
 
 // Example Hashers
 #include "siphash.h"
@@ -66,7 +67,7 @@ main()
 {
     typedef std::chrono::duration<float> secs;
     std::vector<std::size_t> hashes;
-//     xstd::uhash<acme::spooky> h;
+    xstd::shash<acme::spooky> h;
     auto t0 = std::chrono::high_resolution_clock::now();
     for (short y = 1914; y < 2014; ++y)
     {
@@ -76,11 +77,11 @@ main()
             for (unsigned char d = 1; d <= l; ++d)
             {
                 auto date = std::make_tuple(y, m, d);
-#if 1
+#if 0
 //                 hashes.push_back(llvm::hash_combine(llvm::hash_value(std::get<0>(date)),
 //                                                     llvm::hash_value(std::get<1>(date)),
 //                                                     llvm::hash_value(std::get<2>(date))));
-#elif 0
+#elif 1
                 hashes.push_back(h(date));
 #endif
             }

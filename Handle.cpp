@@ -11,7 +11,7 @@
 
 #include "hash_append.h"
 #include "Handle.h"
-#include <unordered_set>
+#include <set>
 
 // namespace acme is used to demonstrate example code.  It is not proposed.
 
@@ -20,7 +20,7 @@ namespace acme
 
 class Handle::CheshireCat
 {
-    std::unordered_set<int> data_;
+    std::set<int> data_;
 public:
     CheshireCat(int data1, int data2)
     {
@@ -30,14 +30,39 @@ public:
 
     friend
     void
-    hash_append(Handle::type_erased_hasher& h, CheshireCat const& c);
+    hash_append(Handle::type_erased_hasher& h, Handle const& c);
+
+    friend
+    Handle::type_erased_stream&
+    operator<<(Handle::type_erased_stream&& h, Handle const& c) noexcept;
 };
 
 void
-hash_append(Handle::type_erased_hasher& h, Handle::CheshireCat const& c)
+hash_append(Handle::type_erased_hasher& h, Handle const& x)
 {
     using xstd::hash_append;
-    hash_append(h, c.data_);
+    {
+        using xstd::hash_append;
+        if (x.smile == nullptr)
+            hash_append(h, nullptr);
+        else
+        {
+            auto const& c = *x.smile;
+            hash_append(h, c.data_);
+        }
+    }
+}
+
+Handle::type_erased_stream&
+operator<<(Handle::type_erased_stream&& h, Handle const& x) noexcept
+{
+    if (x.smile == nullptr)
+        return h << nullptr;
+    else
+    {
+        auto const& c = *x.smile;
+        return h << c.data_;
+    }
 }
 
 Handle::Handle()

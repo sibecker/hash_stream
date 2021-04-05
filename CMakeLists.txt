@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(hash_append)
 enable_testing()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES MSVC)
     message("Appplying MSVC specific settings")
@@ -44,6 +44,6 @@ add_test(NAME test2 COMMAND test2)
 # add_executable(test3 test3.cpp)
 # add_test(NAME test3 COMMAND test3)
 
-add_executable(test4 test4.cpp)
+add_executable(test4 test4.cpp Handle.cpp)
 target_link_libraries(test4 PUBLIC hash)
 add_test(NAME test4 COMMAND test4)

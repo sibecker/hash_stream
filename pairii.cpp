@@ -11,6 +11,7 @@
 
 // The proposal
 #include "hash_append.h"
+#include "hash_stream.h"
 
 // Example Hashers
 #include "siphash.h"
@@ -39,7 +40,7 @@ int
 main()
 {
 #if 0
-    xstd::uhash<acme::spooky> h;
+    xstd::shash<acme::spooky> h;
 #elif 1
     std::mt19937_64 eng;
 #else
