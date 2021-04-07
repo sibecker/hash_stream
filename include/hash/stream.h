@@ -9,27 +9,18 @@
 // 
 //------------------------------------------------------------------------------
 
-#ifndef HASH_STREAM
-#define HASH_STREAM
+#ifndef HASH_STREAM_H
+#define HASH_STREAM_H
 
-#include "hash/traits.h"
-#include "hash/siphash.h"  // the current default hasher
-#include <map>
-#include <memory>
-#include <set>
 #include <span>
-#include <string>
-#include <string_view>
-#include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <system_error>
+#include "hash/siphash.h"  // the current default hasher
+#include "hash/traits.h"
 
 // Everything in namespace xstd, excluding those items in xstd::detail,
 //  is proposed.
 
-// C++14 is assumed below because std::index_sequence_for makes hash_append
-// 	for tuple just so easy.  So in for a penny, in for a pound...
+// C++20 is assumed below because std::span<std::byte const> is such
+// a good fit for streaming bytes.  So in for a penny, in for a pound...
 
 namespace hash
 {
@@ -67,20 +58,53 @@ private:
     Hasher hasher_;
 };
 
+// Very handy utility class
+
+template<class Container>
+class each
+{
+private:
+    Container const& container_;
+
+public:
+    explicit
+    each(Container const& container)
+        : container_{container}
+    {}
+
+    template<typename Hasher>
+    friend
+    stream<Hasher>&
+    operator<<(stream<Hasher>& h, each const& e)
+    {
+        for(auto const& value : e.container_)
+            h << value;
+        return h;
+    }
+};
+
 // span
+// span lacks an equality operator so we ar free to use it to mean whater we want it to mean
+// In this case, we treat equality the same way a vector or array would
 
 template<typename Hasher, typename T>
 stream<Hasher>&
-operator<<(stream<Hasher>& h, std::span<T const> const& rhs) noexcept
+operator<<(stream<Hasher>& h, std::span<T const> const& s) noexcept
 {
     if constexpr (is_contiguously_hashable_v<T, Hasher>) {
-        return h << std::as_bytes(rhs);
+        return h << std::as_bytes(s);
     } else {
-        for(auto const& value : rhs) {
-            h << value;
-        }
-        return h;
+        return h << each(s);
     }
+}
+
+// reference_wrapper
+
+template<typename Hasher, typename T>
+stream<Hasher>&
+operator<<(stream<Hasher>& h, std::reference_wrapper<T const> const& r) noexcept
+{
+    return h<< r.get();
 }
 
 // scalars
@@ -108,7 +132,8 @@ std::enable_if_t
 operator<<(stream<Hasher>& h, T t) noexcept
 {
     detail::reverse_bytes(t);
-    return h << std::span<std::byte const>{std::addressof(t), sizeof(t)};
+    std::span<std::byte const> bytes(reinterpret_cast<std::byte const*>(std::addressof(t)), sizeof(t));
+    return h << bytes;
 }
 
 template <class Hasher, class T>
@@ -133,70 +158,8 @@ operator<<(stream<Hasher>& h, std::nullptr_t) noexcept
 {
     void const* const p = nullptr;
     detail::maybe_reverse_bytes(p, h);
-    return h << std::span<std::byte const>{reinterpret_cast<std::byte const*>(&p), sizeof(p)};
+    return h << p;
 }
-
-// Forward declarations for ADL purposes
-
-template <class Hasher, class T, std::size_t N>
-std::enable_if_t
-<
-    !is_contiguously_hashable_v<T, Hasher>,
-    stream<Hasher>&
->
-operator<<(stream<Hasher>& h, T (&a)[N]) noexcept;
-
-template <class Hasher, class CharT, class Traits>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::basic_string_view<CharT, Traits> const& s) noexcept;
-
-template <class Hasher, class CharT, class Traits, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::basic_string<CharT, Traits, Alloc> const& s) noexcept;
-
-template <class Hasher, class T, class U>
-std::enable_if_t
-<
-    !is_contiguously_hashable_v<std::pair<T, U>, Hasher>,
-    stream<Hasher>&
->
-operator<<(stream<Hasher>& h, std::pair<T, U> const& p) noexcept;
-
-template <class Hasher, class T, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::vector<T, Alloc> const& v) noexcept;
-
-template <class Hasher, class T, std::size_t N>
-std::enable_if_t
-<
-    !is_contiguously_hashable_v<std::array<T, N>, Hasher>,
-    stream<Hasher>&
->
-operator<<(stream<Hasher>& h, std::array<T, N> const& a) noexcept;
-
-template <class Hasher, class ...T>
-std::enable_if_t
-<
-    !is_contiguously_hashable_v<std::tuple<T...>, Hasher>,
-    stream<Hasher>&
->
-operator<<(stream<Hasher>& h, std::tuple<T...> const& t) noexcept;
-
-template <class Hasher, class Key, class T, class Comp, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::map<Key, T, Comp, Alloc> const& m);
-
-template <class Hasher, class Key, class Comp, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::set<Key, Comp, Alloc> const& s);
-
-template <class Hasher, class Key, class T, class Hash, class Pred, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::unordered_map<Key, T, Hash, Pred, Alloc> const& m);
-
-template <class Hasher, class Key, class Hash, class Pred, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::unordered_set<Key, Hash, Pred, Alloc> const& s);
 
 // c-array
 
@@ -209,113 +172,6 @@ std::enable_if_t
 operator<<(stream<Hasher>& h, T (&a)[N]) noexcept
 {
     return h << std::span<T const>{a};
-}
-
-// basic_string_view
-
-template <class Hasher, class CharT, class Traits>
-inline
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::basic_string_view<CharT, Traits> const& s) noexcept
-{
-    return h << std::span<CharT const>{s.data(), s.size()} << s.size();
-}
-
-// basic_string
-
-template <class Hasher, class CharT, class Traits, class Alloc>
-inline
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::basic_string<CharT, Traits, Alloc> const& s) noexcept
-{
-    return h << std::basic_string_view<CharT, Traits>{s};
-}
-
-// pair
-
-template <class Hasher, class T, class U>
-inline
-std::enable_if_t
-<
-    !is_contiguously_hashable_v<std::pair<T, U>, Hasher>,
-    stream<Hasher>&
->
-operator<<(stream<Hasher>& h, std::pair<T, U> const& p) noexcept
-{
-    return h << p.first << p.second;
-}
-
-// vector
-
-template <class Hasher, class T, class Alloc>
-inline
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::vector<T, Alloc> const& v) noexcept
-{
-    return h << std::span<T const>{v.data(), v.size()} << v.size();
-}
-
-// array
-
-template <class Hasher, class T, std::size_t N>
-std::enable_if_t
-<
-    !is_contiguously_hashable_v<std::array<T, N>, Hasher>,
-    stream<Hasher>&
->
-operator<<(stream<Hasher>& h, std::array<T, N> const& a) noexcept
-{
-    return h << std::span<T const>(a);
-}
-
-// tuple
-
-template <class Hasher, class ...T>
-inline
-std::enable_if_t
-<
-    !is_contiguously_hashable_v<std::tuple<T...>, Hasher>,
-    stream<Hasher>&
->
-operator<<(stream<Hasher>& h, std::tuple<T...> const& t) noexcept
-{
-    auto send = [&h](T const&... args) -> stream<Hasher>&
-    {
-        return (h << ... << args);
-    };
-    return std::apply(send, t);
-}
-
-// map
-
-template <class Hasher, class Key, class T, class Comp, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::map<Key, T, Comp, Alloc> const& m)
-{
-    for(auto const& entry : m)
-        h << entry;
-    return h;
-}
-
-// set
-
-template <class Hasher, class Key, class Comp, class Alloc>
-stream<Hasher>&
-operator<<(stream<Hasher>& h, std::set<Key, Comp, Alloc> const& s)
-{
-    for(auto const& entry : s)
-        h << entry;
-    return h;
-}
-
-// error_code
-
-template <class HashAlgorithm>
-inline
-stream<HashAlgorithm>&
-operator<<(stream<HashAlgorithm>& h, std::error_code const& ec)
-{
-    return h << ec.value() << &ec.category();
 }
 
 // shash
@@ -337,4 +193,4 @@ struct shash
 
 } // hash
 
-#endif  // HASH_STREAM
+#endif  // HASH_STREAM_H

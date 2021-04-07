@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 #include "Handle.h"
-#include <set>
+#include "hash/set.h"
 
 // namespace acme is used to demonstrate example code.  It is not proposed.
 

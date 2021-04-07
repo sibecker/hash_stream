@@ -40,8 +40,20 @@ public:
         SHA256_Update(&state_, static_cast<uint8_t const*>(key), len);
     }
 
+    void
+    operator<<(std::span<std::byte const> const& bytes) noexcept
+    {
+        (*this)(bytes.data(), bytes.size());
+    }
+
     explicit
     operator result_type() noexcept
+    {
+        return (*this)();
+    }
+
+    result_type
+    operator()() noexcept
     {
         result_type r;
         SHA256_Final(r.data(), &state_);

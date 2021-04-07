@@ -18,7 +18,8 @@
 #include <random>
 
 #include "hash/append.h"
-#include "hash/stream.h"
+#include "hash/tuple.h"
+#include "hash/vector.h"
 #include "n3876.h"
 
 #ifdef __clang__
